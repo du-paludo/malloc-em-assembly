@@ -13,11 +13,11 @@ if tam_requerido + 16 > TOPO_ALOCADO - TOPO_HEAP    // se o bloco for pequeno o 
     k = (tam_requerido-1) >> 12          // calcula quantos blocos de 4KB são necessários
     k++                                 // incrementa em 1 para garantir que o bloco seja grande o suficiente
     sbrk(k * 4096)                      // aloca mais k blocos de 4KB
-else
-    mem[TOPO_HEAP] = 1                              // marca como ocupado
-    mem[TOPO_HEAP+8] = tam_requerido                // salva o tamanho do bloco
-    TOPO_HEAP += 16 + tam_requerido                 // atualiza o topo da memória
-    return TOPO_HEAP - tam_requerido                // retorna o endereço do bloco
+
+mem[TOPO_HEAP] = 1                              // marca como ocupado
+mem[TOPO_HEAP+8] = tam_requerido                // salva o tamanho do bloco
+TOPO_HEAP += 16 + tam_requerido                 // atualiza o topo da memória
+return TOPO_HEAP - tam_requerido                // retorna o endereço do bloco
 
 
 k = (tam_requerido - 1) >> 12         // calcula quantos blocos de 4KB são necessários
