@@ -10,6 +10,10 @@
     TOPO_HEAP: .quad 0
     TOPO_ALOCADO: .quad 0
 
+.section .bss
+    .equ TAM_BUFFER, 8
+    .lcomm BUFFER, TAM_BUFFER
+
 .section .text
 .globl _start
 
@@ -136,9 +140,16 @@ imprimeMapa:
     pushq %rbp
     movq %rsp, %rbp
 
+    movq INICIO_HEAP, %r10
+    movq (%r10), %rdi
+    movq $BUFFER, %rsi
+    movq $8, %rdx
+    movq $0, %rax
+    syscall
+    
     movq $1, %rdi               # primeiro argumento: descritor de arquivo (1 é stdout)
-    movq INICIO_HEAP, %rsi      # segundo argumento: ponteiro para a mensagem a ser escrita
-    movq $1, %rdx               # terceiro argumento: tamanho da mensagem
+    movq $BUFFER, %rsi          # segundo argumento: ponteiro para a mensagem a ser escrita
+    movq $8, %rdx               # terceiro argumento: tamanho da mensagem
     movq $1, %rax               # número do sistema para write (1)
     syscall                     # chama o sistema write
 
