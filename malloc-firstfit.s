@@ -9,7 +9,6 @@
     INICIO_HEAP: .quad 0
     TOPO_HEAP: .quad 0
     TOPO_ALOCADO: .quad 0
-    ULTIMA_BUSCA: .quad 0
     
     strGerencial: .string "################"
     charLivre: .string "-"
@@ -32,7 +31,6 @@ inicializaAlocador:
     movq %rax, INICIO_HEAP      # coloca endereço inicial da heap em INICIO_HEAP
     movq %rax, TOPO_HEAP        # coloca endereço inicial da heap em TOPO_HEAP
     movq %rax, TOPO_ALOCADO     # coloca endereço inicial da heap em TOPO_ALOCADO
-    movq %rax, ULTIMA_BUSCA     # coloca endereço inicial da heap em ULTIMA_BUSCA
     
     popq %rbp                   # desempilha e restaura o valor antigo de rbp
     ret                         # finaliza a função
@@ -54,23 +52,13 @@ alocaMem:
     pushq %rbp
     movq %rsp, %rbp
 
-    movq TOPO_HEAP, %rbx
-    movq INICIO_HEAP, %rcx
-    cmpq %rbx, %rcx
-    je fim_while
-
-    movq TOPO_HEAP, %rbx            # %rbx (topo) <-- TOPO_HEAP
-    movq ULTIMA_BUSCA, %r12         # %r12 <-- ULTIMA_BUSCA
-    movq %r12, %rcx                 # %rcx (i) <-- ULTIMA_BUSCA
-    jmp while
-
-    ajusta_rcx:
-    movq INICIO_HEAP, %rcx
-    cmpq %rcx, %r12
-    je fim_while
+    movq TOPO_HEAP, %rbx        # %rbx (topo) <-- TOPO_HEAP
+    movq INICIO_HEAP, %rcx      # %rcx (i) <-- INICIO_HEAP
 
     # itera cada bloco da heap até chegar no topo
     while:
+    cmpq %rbx, %rcx             # %rcx (i) >= %rbx (topo) ==> fim_while
+    jge fim_while
         movq (%rcx), %rdx       # %rdx (bit_ocupado) <-- M[%rcx]
         movq 8(%rcx), %rsi      # %rsi (tamanho) <-- M[%rcx + 8]
 
@@ -80,7 +68,6 @@ alocaMem:
             # verifica se o tamanho do bloco é suficiente
             cmpq 16(%rbp), %rsi         # %rsi (tamanho) < num_bytes ==> fim_if
             jl fim_if
-                movq %rcx, ULTIMA_BUSCA
                 movq $1, (%rcx)         # informa que o bloco está ocupado
                 addq $16, %rcx
                 movq %rcx, %rax         # retorna o endereço do bloco (início do conteúdo)
@@ -91,11 +78,7 @@ alocaMem:
         # rcx passa a apontar para o início do próximo bloco
         addq $16, %rcx          # %rcx (i) <-- %rcx (i) + 16
         addq %rsi, %rcx         # %rcx (i) <-- %rcx (i) + %rsi (tamanho)
-        cmpq %rbx, %rcx         # %rcx (i) == TOPO_HEAP ==> ajusta_rcx
-        je ajusta_rcx
-
-        cmpq %r12, %rcx         # %rcx (i) != ÚLTIMA_BUSCA ==> while
-        jne while            # volta para o while 
+        jmp while
 
     fim_while:
     # obtém o endereço do topo do último bloco alocado e o endereço do topo dos bytes alocados na heap
@@ -127,7 +110,6 @@ alocaMem:
 
     fim_if2:
     movq TOPO_HEAP, %rbx    # %rbx <-- TOPO_HEAP
-    movq %rbx, ULTIMA_BUSCA
 
     movq $1, (%rbx)         # M[%rbx] <-- 1 (bit_ocupado)
     movq 16(%rbp), %rcx     # %rcx <-- num_bytes (parâmetro)
@@ -166,7 +148,7 @@ imprimeMapa:
 
     movq INICIO_HEAP, %r12
     while_bloco:
-    cmpq -8(%rbp), %r12             # -8(%rbp) (iterador_bloco) >= %rcx (TOPO_HEAP) ==> fim_while_bloco
+    cmpq -8(%rbp), %r12                 # -8(%rbp) (iterador_bloco) >= %rcx (TOPO_HEAP) ==> fim_while_bloco
     jge fim_while_bloco
         movq $strGerencial, %rsi    # segundo argumento do write: ponteiro para a mensagem a ser escrita
         movq $16, %rdx              # terceiro argumento do write: tamanho da mensagem
