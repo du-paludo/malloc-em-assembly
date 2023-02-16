@@ -13,7 +13,7 @@
     strGerencial: .string "################"
     charLivre: .string "-"
     charOcupado: .string "+"
-    charLinha: .string "\n"
+    charLinha: .string "\n\n"
 
 
 .section .text
@@ -97,7 +97,34 @@ alocaMem:
     je aloca_topo
         movq -8(%rbp), %rcx
         movq $1, (%rcx)         # informa que o bloco está ocupado
+
+        movq 8(%rcx), %r10      # r10 < tam antigo do bloco
+
+        movq -24(%rbp), %r11    # r11 < tam novo do bloco
+        movq %r11, %rdx         # rdx < r11
+
         addq $16, %rcx
+        
+        movq %rcx, %r12         # r12 < inicio do conteudo do bloco
+        addq %r10, %r12         # r12 < inicio do próximo bloco alocado
+        
+        addq %rcx, %r11         # r11 < inicio do bloco livre
+        movq %r11, %rsi
+
+        subq %r11, %r12         # r12 < r12 - r11 (tam livre)
+        cmpq $16, %r12
+        jle nao_espaco_livre
+            movq %rdx, -8(%rcx)      # tam do bloco < r11
+            movq $0, (%rsi)
+            subq $16, %r12
+            movq %r12, 8(%rsi)
+
+
+        nao_espaco_livre:
+        
+
+        addq 8(%rcx), %r12
+
         movq %rcx, %rax         # retorna o endereço do bloco (início do conteúdo)
         addq $24, %rsp
         popq %rbp
@@ -159,11 +186,45 @@ liberaMem:
     movq %rdi, -8(%rbp)
 
     # coloca 0 no bit de ocupado
-    movq -8(%rbp), %rbx     # %rbx <-- %rdi (parâmetro)
-    movq $0, -16(%rbx)      # M[%rbx - 16] <-- 0
-    movq $0, %rax           # %rax <-- 0 (retorno)
+    movq -8(%rbp), %r10     # %rbx <-- %rdi (parâmetro)
+    movq $0, -16(%r10)      # M[%rbx - 16] <-- 0
+    
+    call concatena
+    call concatena
 
     addq $8, %rsp
+    popq %rbp
+    ret
+
+concatena:
+    pushq %rbp
+    movq %rsp, %rbp
+
+    movq TOPO_HEAP, %rax
+    movq INICIO_HEAP, %rbx
+
+    # itera cada bloco da heap até chegar no topo
+    while2:
+    cmpq %rax, %rbx             # %rbx (i) >= %rax (topo) ==> fim_while
+    jge fim_while2
+        cmpq $0, (%rbx)
+        jne fim_if4
+            movq 8(%rbx), %rcx
+            movq %rbx, %rsi
+            addq $16, %rsi
+            addq %rcx, %rsi
+            cmpq $0, (%rsi)
+            jne fim_if4
+                movq 8(%rsi), %rdx
+                addq $16, %rdx
+                addq %rdx, 8(%rbx)
+        fim_if4:
+        movq 8(%rbx), %rsi
+        addq $16, %rbx          # %rbx (i) <-- %rbx (i) + 16
+        addq %rsi, %rbx         # %rbx (i) <-- %rbx (i) + %rsi (tamanho)
+        jmp while2
+    fim_while2:
+
     popq %rbp
     ret
 
@@ -215,7 +276,7 @@ imprimeMapa:
         
     fim_while_bloco:
     movq $charLinha, %rsi
-    movq $1, %rdx
+    movq $2, %rdx
     movq $1, %rax
     movq $1, %rdi
     syscall

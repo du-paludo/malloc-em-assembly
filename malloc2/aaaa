@@ -1,0 +1,18 @@
+
+    ; cmpq %rcx, TOPO_HEAP
+    ; je fim_if3
+
+    ; cmpq $0, (%rcx)
+    ; jne fim_if3
+    ;     movq 8(%rcx), %rdi
+    ;     addq $16, %rdi
+    ;     addq %rdi, -8(%rbx)
+
+    ; cmpq $0, (%rcx)
+    ; jne fim_if3
+    ;     movq 8(%rcx), %rdi
+    ;     addq $16, %rdi
+    ;     addq %rdi, -8(%rbx)
+
+    ; fim_if3:
+    ; movq $0, %rax           # %rax <-- 0 (retorno)
